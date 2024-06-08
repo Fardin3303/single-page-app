@@ -18,7 +18,7 @@ class Point(PointBase):
     user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -33,4 +33,4 @@ class User(UserBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
