@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+
 # from routers import auth, points
 from app.routers import auth, points
+
 # from database import engine, Base
 from app.database import engine, Base
 

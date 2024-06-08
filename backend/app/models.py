@@ -3,11 +3,13 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 import datetime
 
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+
 
 class PointOfInterest(Base):
     __tablename__ = "points_of_interest"
@@ -16,6 +18,6 @@ class PointOfInterest(Base):
     latitude = Column(String)
     longitude = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User")

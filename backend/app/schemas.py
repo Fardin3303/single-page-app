@@ -1,13 +1,16 @@
 from pydantic import BaseModel
 import datetime
 
+
 class PointBase(BaseModel):
     description: str
     latitude: str
     longitude: str
 
+
 class PointCreate(PointBase):
     pass
+
 
 class Point(PointBase):
     id: int
@@ -17,11 +20,14 @@ class Point(PointBase):
     class Config:
         orm_mode = True
 
+
 class UserBase(BaseModel):
     username: str
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class User(UserBase):
     id: int
