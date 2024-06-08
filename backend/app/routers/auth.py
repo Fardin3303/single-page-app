@@ -30,8 +30,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 router = APIRouter()
 
 
-# @router.post("/token", response_model=schemas.Token)
-@router.post("/token")
+@router.post("/token", response_model=schemas.Token)
 def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
@@ -42,7 +41,7 @@ def login_for_access_token(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return schemas.Token(access_token=access_token, token_type="bearer")
 
 
 @router.post("/users/", response_model=schemas.User)
