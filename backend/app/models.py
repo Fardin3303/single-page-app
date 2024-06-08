@@ -1,23 +1,29 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
-from app.database import Base
-import datetime
+
+# from sqlalchemy.orm import relationship
+# from app.database import Base
+from datetime import datetime
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional
 
 
-class User(Base):
+class User(SQLModel, table=True):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    id: int = Field(default=None, primary_key=True, index=True)
+    username: str = Field(index=True, unique=True)
+    hashed_password: Optional[str] = Field(default=None)
+    points_of_interest: Optional["PointOfInterest"] = Relationship(
+        back_populates="owner"
+    )
 
 
-class PointOfInterest(Base):
+class PointOfInterest(SQLModel, table=True):
     __tablename__ = "points_of_interest"
-    id = Column(Integer, primary_key=True, index=True)
-    description = Column(String, index=True)
-    latitude = Column(String)
-    longitude = Column(String)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    description: Optional[str] = None
+    latitude: Optional[str] = None
+    longitude: Optional[str] = None
+    created_at: Optional[datetime] = None
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id")
 
-    owner = relationship("User")
+    owner: Optional["User"] = Relationship(back_populates="points_of_interest")
