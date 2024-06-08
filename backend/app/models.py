@@ -1,7 +1,3 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-
-# from sqlalchemy.orm import relationship
-# from app.database import Base
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional
