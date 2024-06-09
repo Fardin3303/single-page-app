@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.post("/points/", response_model=schemas.Point)
 def create_point(
-    point: schemas.PointCreate,
+    point: schemas.Point,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
