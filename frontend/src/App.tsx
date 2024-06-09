@@ -55,6 +55,7 @@ const App: React.FC = () => {
   const handleDeleteMarker = (id: string) => {
     setMarkers((prevMarkers) =>
       prevMarkers.filter((marker) => marker.id !== id)
+      // Call your delete marker API endpoint here
     );
   };
 
@@ -84,6 +85,7 @@ const App: React.FC = () => {
                               ? { ...m, description: newDescription }
                               : m
                           )
+                          // Call your create/update marker API endpoint here
                         );
                       }}
                     />
