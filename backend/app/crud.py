@@ -23,7 +23,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def create_point(db: Session, point: schemas.PointCreate, user_id: int):
-    db_point = models.PointOfInterest(**point.dict(), user_id=user_id)
+    db_point = models.PointOfInterest(**point.model_dump(), user_id=user_id)
     db.add(db_point)
     db.commit()
     db.refresh(db_point)
@@ -53,5 +53,19 @@ def delete_point(db: Session, point_id: int, user_id: int):
     )
     if db_point:
         db.delete(db_point)
+        db.commit()
+    return db_point
+
+def edit_point_description(db: Session, point_id: int, user_id: int, description: str):
+    db_point = (
+        db.query(models.PointOfInterest)
+        .filter(
+            models.PointOfInterest.id == point_id,
+            models.PointOfInterest.user_id == user_id,
+        )
+        .first()
+    )
+    if db_point:
+        db_point.description = description
         db.commit()
     return db_point
