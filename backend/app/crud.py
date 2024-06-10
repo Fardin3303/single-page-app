@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: int) -> models.User | None:
     """
     Retrieve a user from the database by user ID.
 
@@ -19,7 +19,7 @@ def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_user_by_username(db: Session, username: str):
+def get_user_by_username(db: Session, username: str) -> models.User | None:
     """
     Retrieve a user from the database by username.
 
@@ -33,7 +33,7 @@ def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     """
     Create a new user in the database.
 
@@ -52,7 +52,9 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def create_point(db: Session, point: schemas.PointCreate, user_id: int):
+def create_point(
+    db: Session, point: schemas.PointCreate, user_id: int
+) -> models.PointOfInterest:
     """
     Create a new point of interest in the database.
 
@@ -71,7 +73,7 @@ def create_point(db: Session, point: schemas.PointCreate, user_id: int):
     return db_point
 
 
-def get_points(db: Session):
+def get_points(db: Session) -> list[models.PointOfInterest]:
     """
     Retrieve all points of interest from the database.
 
@@ -84,7 +86,7 @@ def get_points(db: Session):
     return db.query(models.PointOfInterest).all()
 
 
-def get_points_by_user(db: Session, user_id: int):
+def get_points_by_user(db: Session, user_id: int) -> list[models.PointOfInterest]:
     """
     Retrieve all points of interest owned by a user from the database.
 
@@ -101,7 +103,8 @@ def get_points_by_user(db: Session, user_id: int):
         .all()
     )
 
-def get_point_by_id(db: Session, point_id: int):
+
+def get_point_by_id(db: Session, point_id: int) -> models.PointOfInterest | None:
     """
     Retrieve a point of interest from the database by ID.
 
@@ -112,10 +115,16 @@ def get_point_by_id(db: Session, point_id: int):
     Returns:
         models.PointOfInterest: The point of interest object if found, None otherwise.
     """
-    return db.query(models.PointOfInterest).filter(models.PointOfInterest.id == point_id).first()
+    return (
+        db.query(models.PointOfInterest)
+        .filter(models.PointOfInterest.id == point_id)
+        .first()
+    )
 
 
-def delete_point(db: Session, point_id: int, user_id: int):
+def delete_point(
+    db: Session, point_id: int, user_id: int
+) -> models.PointOfInterest | None:
     """
     Delete a point of interest from the database.
 
@@ -141,7 +150,9 @@ def delete_point(db: Session, point_id: int, user_id: int):
     return db_point
 
 
-def edit_point_description(db: Session, point_id: int, user_id: int, description: str):
+def edit_point_description(
+    db: Session, point_id: int, user_id: int, description: str
+) -> models.PointOfInterest | None:
     """
     Edit the description of a point of interest in the database.
 
