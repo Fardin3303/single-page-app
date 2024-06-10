@@ -56,6 +56,7 @@ def delete_point(db: Session, point_id: int, user_id: int):
         db.commit()
     return db_point
 
+
 def edit_point_description(db: Session, point_id: int, user_id: int, description: str):
     db_point = (
         db.query(models.PointOfInterest)

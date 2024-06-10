@@ -33,6 +33,7 @@ def delete_point(
         raise HTTPException(status_code=404, detail="Point not found")
     return db_point
 
+
 @router.put("/points/{point_id}", response_model=schemas.Point)
 def update_point(
     point_id: int,
