@@ -193,5 +193,5 @@ def test_delete_point_with_different_user():
             "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
         },
     )
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Point not found"}
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Not authorized to update this point"}
