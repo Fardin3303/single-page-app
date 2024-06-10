@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.post("/points/", response_model=schemas.Point)
 def create_point(
-    point: schemas.Point,
+    point: schemas.PointCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -29,6 +29,21 @@ def delete_point(
     current_user: models.User = Depends(get_current_user),
 ):
     db_point = crud.delete_point(db=db, point_id=point_id, user_id=current_user.id)
+    if db_point is None:
+        raise HTTPException(status_code=404, detail="Point not found")
+    return db_point
+
+@router.put("/points/{point_id}", response_model=schemas.Point)
+def update_point(
+    point_id: int,
+    # point: schemas.Point,
+    description: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_point = crud.edit_point_description(
+        db=db, point_id=point_id, user_id=current_user.id, description=description
+    )
     if db_point is None:
         raise HTTPException(status_code=404, detail="Point not found")
     return db_point
