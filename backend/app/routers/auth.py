@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
     """
     Create an access token with the given data and expiration time.
 
@@ -36,7 +36,7 @@ router = APIRouter()
 @router.post("/token", response_model=schemas.Token)
 def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
-):
+) -> schemas.Token:
     """
     Generate an access token for the user based on their username and password.
 
@@ -60,7 +60,7 @@ def login_for_access_token(
     return schemas.Token(access_token=access_token, token_type="bearer")
 
 @router.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)) -> schemas.User:
     """
     Create a new user.
 
