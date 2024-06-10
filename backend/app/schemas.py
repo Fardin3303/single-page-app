@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 import datetime
 
 
@@ -9,7 +9,8 @@ class PointBase(BaseModel):
 
 
 class PointCreate(PointBase):
-    pass
+    id: int
+    created_at: datetime.datetime
 
 
 class Point(PointBase):
@@ -17,8 +18,7 @@ class Point(PointBase):
     created_at: datetime.datetime
     user_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBase(BaseModel):
@@ -32,8 +32,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
