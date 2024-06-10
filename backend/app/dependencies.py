@@ -6,14 +6,18 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from app import models
 
-
-
 SECRET_KEY = "YOUR_SECRET_KEY"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_db():
+    """
+    Function to get a database session.
+
+    Returns:
+        Session: The database session.
+    """
     db = SessionLocal()
     try:
         yield db
@@ -22,6 +26,19 @@ def get_db():
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """
+    Function to get the current user based on the provided token.
+
+    Args:
+        token (str): The access token.
+        db (Session): The database session.
+
+    Returns:
+        User: The current user.
+
+    Raises:
+        HTTPException: If the token is invalid or the user is not found.
+    """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
