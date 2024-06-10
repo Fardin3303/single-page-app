@@ -24,6 +24,8 @@ def override_get_current_user():
     try:
         db = TestingSessionLocal()
         user = db.query(models.User).first()
+        if user is None:
+            raise Exception("Test user not found")
         return user
     finally:
         db.close()
