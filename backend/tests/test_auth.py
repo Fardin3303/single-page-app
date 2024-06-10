@@ -7,15 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.dependencies import get_db
-from db_config import TestingSessionLocal, engine, base
-
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
+from db_config import TestingSessionLocal, engine, base, override_get_db
 
 
 app.dependency_overrides[get_db] = override_get_db
@@ -25,10 +17,11 @@ client = TestClient(app)
 
 @pytest.fixture(scope="session", autouse=True)
 def clear_data_after_tests(request):
-    # Execute all tests
+    """
+    Fixture that clears the data in the database after running the tests.
+    """
     yield
 
-    # Clear data after all tests have completed
     with engine.connect() as connection:
         transaction = connection.begin()
         for table in reversed(base.metadata.sorted_tables):
@@ -40,6 +33,9 @@ def clear_data_after_tests(request):
 
 @pytest.fixture(scope="module")
 def test_db():
+    """
+    Fixture that creates the necessary database tables for testing.
+    """
     base.metadata.create_all(bind=engine)
     yield
     base.metadata.drop_all(bind=engine)
@@ -47,12 +43,18 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def db_session():
+    """
+    Fixture that provides a TestingSessionLocal instance for each test function.
+    """
     session = TestingSessionLocal()
     yield session
     session.close()
 
 
 def test_create_user():
+    """
+    Test case for creating a new user.
+    """
     response = client.post(
         "/users/", json={"username": "testuser", "password": "testpassword"}
     )
@@ -62,6 +64,9 @@ def test_create_user():
 
 
 def test_create_existing_user():
+    """
+    Test case for creating a user with an existing username.
+    """
     response = client.post(
         "/users/", json={"username": "testuser", "password": "testpassword"}
     )
@@ -70,6 +75,9 @@ def test_create_existing_user():
 
 
 def test_login_for_access_token():
+    """
+    Test case for logging in and obtaining an access token.
+    """
     response = client.post(
         "/token", data={"username": "testuser", "password": "testpassword"}
     )
@@ -80,6 +88,9 @@ def test_login_for_access_token():
 
 
 def test_incorrect_login():
+    """
+    Test case for logging in with incorrect credentials.
+    """
     response = client.post(
         "/token", data={"username": "wronguser", "password": "wrongpassword"}
     )

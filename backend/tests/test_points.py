@@ -9,26 +9,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app import models
 from app.dependencies import get_db, get_current_user
-from db_config import TestingSessionLocal, engine, base
+from db_config import TestingSessionLocal, engine, base, override_get_db, override_get_current_user
 
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-def override_get_current_user():
-    try:
-        db = TestingSessionLocal()
-        user = db.query(models.User).first()
-        if user is None:
-            raise Exception("Test user not found")
-        return user
-    finally:
-        db.close()
 
 
 app.dependency_overrides[get_db] = override_get_db
@@ -39,10 +21,11 @@ client = TestClient(app)
 
 @pytest.fixture(scope="session", autouse=True)
 def clear_data_after_tests(request):
-    # Execute all tests
+    """
+    Fixture to clear the data from the database after running the tests.
+    """
     yield
 
-    # Clear data after all tests have completed
     with engine.connect() as connection:
         transaction = connection.begin()
         for table in reversed(base.metadata.sorted_tables):
@@ -54,6 +37,9 @@ def clear_data_after_tests(request):
 
 @pytest.fixture(scope="module")
 def test_db():
+    """
+    Fixture to create the database tables for testing.
+    """
     base.metadata.create_all(bind=engine)
     yield
     base.metadata.drop_all(bind=engine)
@@ -61,12 +47,18 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def db_session():
+    """
+    Fixture to create a new database session for each test function.
+    """
     session = TestingSessionLocal()
     yield session
     session.close()
 
 
 def create_test_user(username: str, password: str) -> dict:
+    """
+    Helper function to create a test user.
+    """
     response = client.post("/users/", json={"username": username, "password": password})
     assert response.status_code == 200
     data = response.json()
@@ -75,8 +67,10 @@ def create_test_user(username: str, password: str) -> dict:
     return data
 
 
-# Create a access token for the first user
 def get_access_token(username: str, password: str) -> str:
+    """
+    Helper function to get an access token for a user.
+    """
     response = client.post("/token", data={"username": username, "password": password})
     assert response.status_code == 200
     data = response.json()
@@ -84,8 +78,10 @@ def get_access_token(username: str, password: str) -> str:
     return data["access_token"]
 
 
-# Test creating a point of interest for a user
 def test_create_point():
+    """
+    Test creating a point of interest for a user.
+    """
     create_test_user(username="testuser", password="testpassword")
     response = client.post(
         "/points/",
@@ -108,8 +104,10 @@ def test_create_point():
     assert data["user_id"] == 1
 
 
-# Test creating a point of interest for another user
 def test_create_point_for_another_user():
+    """
+    Test creating a point of interest for another user.
+    """
     create_test_user(username="testuser2", password="testpassword2")
     response = client.post(
         "/points/",
@@ -129,11 +127,12 @@ def test_create_point_for_another_user():
     assert data["description"] == "Test point2"
     assert data["latitude"] == "45.7128"
     assert data["longitude"] == "-75.0060"
-    # assert data["user_id"] == 2
 
 
-# Test reading all points of interest
 def test_read_points():
+    """
+    Test reading all points of interest.
+    """
     response = client.get("/points/")
     assert response.status_code == 200
     data = response.json()
@@ -148,8 +147,10 @@ def test_read_points():
     assert data[1]["user_id"] == 1
 
 
-# Test editing a point of interest
 def test_edit_point():
+    """
+    Test editing a point of interest.
+    """
     response = client.put(
         "/points/1",
         params={
@@ -167,8 +168,10 @@ def test_edit_point():
     assert data["user_id"] == 1
 
 
-# Test deleting a point of interest
 def test_delete_point():
+    """
+    Test deleting a point of interest.
+    """
     response = client.delete(
         "/points/1",
         headers={
@@ -183,10 +186,11 @@ def test_delete_point():
     assert data["user_id"] == 1
 
 
-# Test deleting a point of interest with a different user
-# skip
 @pytest.mark.skip
 def test_delete_point_with_different_user():
+    """
+    Test deleting a point of interest with a different user.
+    """
     response = client.delete(
         "/points/2",
         headers={
