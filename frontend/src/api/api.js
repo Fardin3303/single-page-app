@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
 const API_BASE_URL = 'http://host.docker.internal:8000'; // Replace with your backend base URL
 
@@ -11,7 +11,7 @@ const apiClient = axios.create({
 });
 
 // Add a request interceptor to include the JWT token
-apiClient.interceptors.request.use((config: AxiosRequestConfig) => {
+apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -26,19 +26,17 @@ export const getPoints = async () => {
   return response.data;
 };
 
-export const createPoint = async (pointData: any) => {
+export const createPoint = async (pointData) => {
   const response = await apiClient.post('/points/', pointData);
   return response.data;
 };
 
-export const updatePoint = async (pointId: number, pointData: any) => {
+export const updatePoint = async (pointId, pointData) => {
   const response = await apiClient.put(`/points/${pointId}/`, pointData);
   return response.data;
 };
 
-export const deletePoint = async (pointId: number) => {
+export const deletePoint = async (pointId) => {
   const response = await apiClient.delete(`/points/${pointId}/`);
   return response.data;
 };
-     
-     

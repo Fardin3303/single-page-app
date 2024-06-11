@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import TabNavItem from "./TabNavItem.js";
 import TabContent from "./TabContent.js";
 import LeafletComponent from './LeafletComponent.js';
+import Login from '../Auth/Login';
+import PointsList from '../Points/PointsList';
+import PointForm from '../Points/PointForm';
  
 const Tabs = () => {
   const [activeTab, setActiveTab] = useState("mapbox");
@@ -14,6 +17,9 @@ const Tabs = () => {
         <TabNavItem title="OpenLayers" id="openlayers" activeTab={activeTab} setActiveTab={setActiveTab}/>
         <TabNavItem title="ArcGIS" id="arcgis" activeTab={activeTab} setActiveTab={setActiveTab}/>
         <TabNavItem title="Carto" id="carto" activeTab={activeTab} setActiveTab={setActiveTab}/>
+        <TabNavItem title="Login" id="login" activeTab={activeTab} setActiveTab={setActiveTab}/>
+        <TabNavItem title="Points" id="points" activeTab={activeTab} setActiveTab={setActiveTab}/>
+        <TabNavItem title="Create Point" id="create-point" activeTab={activeTab} setActiveTab={setActiveTab}/>
       </ul>
  
       <div className="outlet">
@@ -31,6 +37,15 @@ const Tabs = () => {
         </TabContent>
         <TabContent id="carto" activeTab={activeTab}>
           <p>Carto works!</p>
+        </TabContent>
+        <TabContent id="login" activeTab={activeTab}>
+          <Login />
+        </TabContent>
+        <TabContent id="points" activeTab={activeTab}>
+          <PointsList />
+        </TabContent>
+        <TabContent id="create-point" activeTab={activeTab}>
+          <PointForm />
         </TabContent>
       </div>
     </div>
