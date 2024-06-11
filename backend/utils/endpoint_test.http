@@ -1,0 +1,51 @@
+### Create User
+POST http://0.0.0.0:8000/users/
+accept: application/json
+Content-Type: application/json
+
+{
+  "username": "olli",
+  "password": "huur"
+}
+### Request Token
+POST http://0.0.0.0:8000/token
+accept: application/json
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=&username=olli&password=huur&scope=&client_id=&client_secret=
+
+### Create Point
+POST http://0.0.0.0:8000/points/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvbGxpIiwiZXhwIjoxNzE4MDQ5MTk2fQ.a-jENupNkWl219TZQKa57ucaklPHV1aNILvFYf63aUY
+
+{
+    "description": "Test point2",
+    "latitude": "45.7128",
+    "longitude": "-75.0060",
+    "id": 5,
+    "created_at": "2021-05-01T14:00:00.000000Z"
+}
+
+### Get Points
+GET http://0.0.0.0:8000/points/
+Accept: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Delete Point
+DELETE http://0.0.0.0:8000/points/5
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvbGxpIiwiZXhwIjoxNzE4MDQ5MTk2fQ.a-jENupNkWl219TZQKa57ucaklPHV1aNILvFYf63aUY
+
+### Update Point
+PUT http://0.0.0.0:8000/points/1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvbGxpIiwiZXhwIjoxNzE4MDQ5MTk2fQ.a-jENupNkWl219TZQKa57ucaklPHV1aNILvFYf63aUY
+
+{
+  "description": "updated description",
+ 
+}
+
