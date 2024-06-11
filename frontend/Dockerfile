@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json .
 
 RUN npm install
+RUN npm i leaflet
 RUN npm install --save-dev @types/uuid
 
 COPY . /app
