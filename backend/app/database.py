@@ -4,7 +4,7 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:password@host.docker.internal:5432/mydatabase",
+    "postgresql+psycopg2://postgres:password@host.docker.internal:5432/mydatabase",
 )
 
 engine = create_engine(DATABASE_URL)
