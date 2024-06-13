@@ -1,10 +1,28 @@
 from sqlalchemy.orm import Session
 from app import models, schemas
 from passlib.context import CryptContext
+import traceback
+
+from app import custom_logging
+
+LOGGER = custom_logging.get_logger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def handle_exception(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            LOGGER.error(f"An error occurred in {func.__name__}: {e}")
+            # traceback.print_exc()
+            return None
+
+    return wrapper
+
+
+@handle_exception
 def get_user(db: Session, user_id: int) -> models.User | None:
     """
     Retrieve a user from the database by user ID.
@@ -19,6 +37,7 @@ def get_user(db: Session, user_id: int) -> models.User | None:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
+@handle_exception
 def get_user_by_username(db: Session, username: str) -> models.User | None:
     """
     Retrieve a user from the database by username.
@@ -33,6 +52,7 @@ def get_user_by_username(db: Session, username: str) -> models.User | None:
     return db.query(models.User).filter(models.User.username == username).first()
 
 
+@handle_exception
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     """
     Create a new user in the database.
@@ -49,9 +69,11 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    LOGGER.info(f"User {user.username} created")
     return db_user
 
 
+@handle_exception
 def create_point(
     db: Session, point: schemas.PointCreate, user_id: int
 ) -> models.PointOfInterest:
@@ -73,6 +95,7 @@ def create_point(
     return db_point
 
 
+@handle_exception
 def get_points(db: Session) -> list[models.PointOfInterest]:
     """
     Retrieve all points of interest from the database.
@@ -86,6 +109,7 @@ def get_points(db: Session) -> list[models.PointOfInterest]:
     return db.query(models.PointOfInterest).all()
 
 
+@handle_exception
 def get_points_by_user(db: Session, user_id: int) -> list[models.PointOfInterest]:
     """
     Retrieve all points of interest owned by a user from the database.
@@ -104,6 +128,7 @@ def get_points_by_user(db: Session, user_id: int) -> list[models.PointOfInterest
     )
 
 
+@handle_exception
 def get_point_by_id(db: Session, point_id: int) -> models.PointOfInterest | None:
     """
     Retrieve a point of interest from the database by ID.
@@ -122,6 +147,7 @@ def get_point_by_id(db: Session, point_id: int) -> models.PointOfInterest | None
     )
 
 
+@handle_exception
 def delete_point(
     db: Session, point_id: int, user_id: int
 ) -> models.PointOfInterest | None:
@@ -150,6 +176,7 @@ def delete_point(
     return db_point
 
 
+@handle_exception
 def edit_point_description(
     db: Session, point_id: int, user_id: int, description: str
 ) -> models.PointOfInterest | None:
