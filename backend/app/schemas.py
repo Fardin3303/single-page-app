@@ -32,6 +32,12 @@ class Point(PointBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PointUpdate(BaseModel):
+    """
+    Model for updating a point.
+    """
+    description: str
+
 class UserBase(BaseModel):
     """
     Base model for a user.
