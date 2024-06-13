@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from app import crud, schemas, models
 from app.dependencies import get_db, get_current_user
 from typing import List
+from app import custom_logging
+
+LOGGER = custom_logging.get_logger(__name__)
 
 router = APIRouter()
 
@@ -28,7 +31,9 @@ def create_point(
 
 
 @router.get("/points/", response_model=List[schemas.Point])
-def read_points(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> List[schemas.Point]:
+def read_points(
+    skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+) -> List[schemas.Point]:
     """
     Read a list of points.
 
@@ -60,18 +65,20 @@ def delete_point(
 
     Returns:
         schemas.Point: The deleted point.
-    
+
     Raises:
         HTTPException: If the point is not found or if the user is not authorized to delete the point.
     """
     db_point = crud.get_point_by_id(db=db, point_id=point_id)
-    
+
     if db_point is None:
         raise HTTPException(status_code=404, detail="Point not found")
-    
+
     if db_point.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this point")
-    
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this point"
+        )
+
     deleted_point = crud.delete_point(db=db, point_id=point_id, user_id=current_user.id)
     return deleted_point
 
@@ -94,7 +101,7 @@ def update_point(
 
     Returns:
         schemas.Point: The updated point.
-    
+
     Raises:
         HTTPException: If the point is not found or if the user is not authorized to update the point.
     """
@@ -103,7 +110,11 @@ def update_point(
     if db_point is None:
         raise HTTPException(status_code=404, detail="Point not found")
     if db_point.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to update this point")
+        raise HTTPException(
+            status_code=403, detail="Not authorized to update this point"
+        )
 
-    updated_point = crud.edit_point_description(db=db, point_id=point_id, description=description, user_id=current_user.id)
+    updated_point = crud.edit_point_description(
+        db=db, point_id=point_id, description=description, user_id=current_user.id
+    )
     return updated_point
