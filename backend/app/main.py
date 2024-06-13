@@ -14,7 +14,7 @@ app: FastAPI = FastAPI()
 
 # Set up CORS origins to allow requests from the frontend
 origins: List[str] = [
-    "http://host.docker.internal:3000",
+    "http://localhost:3000",
 ]
 app.add_middleware(
     CORSMiddleware,
