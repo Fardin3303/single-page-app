@@ -7,15 +7,11 @@ const LeafletComponent = () => {
   const mapContainerRef = useRef(null);
   const map = useRef(null);
 
-  const [lng] = useState(-97.7431);
-  const [lat] = useState(30.2672);
-  const [zoom] = useState(2);
+  const [lng] = useState(24.926);
+  const [lat] = useState(60.227);
+  const [zoom] = useState(12);
 
   const [markers, setMarkers] = useState([]);
-  const [loginFormVisible, setLoginFormVisible] = useState(true);
-  const [registerFormVisible, setRegisterFormVisible] = useState(true);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
 
   useEffect(() => {
     map.current = L.map(mapContainerRef.current).setView([lat, lng], zoom);
@@ -68,57 +64,9 @@ const LeafletComponent = () => {
     });
   }, [markers]);
 
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    // Handle login form submission
-    console.log("Login form submitted. Username:", username, "Password:", password);
-  };
-
-  const handleRegisterSubmit = (e) => {
-    e.preventDefault();
-    // Handle register form submission
-    console.log("Register form submitted. Username:", username, "Password:", password);
-  };
-
   return (
     <div>
       <div className="map-container" ref={mapContainerRef} style={{ height: '80vh', width: '100%' }} />
-      <div>
-        {loginFormVisible && (
-          <form onSubmit={handleLoginSubmit}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit">Login</button>
-          </form>
-        )}
-        {registerFormVisible && (
-          <form onSubmit={handleRegisterSubmit}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit">Register</button>
-          </form>
-        )}
-      </div>
     </div>
   );
 };
