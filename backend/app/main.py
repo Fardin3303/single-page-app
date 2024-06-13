@@ -3,9 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 
 from app.routers import auth, points
-from app.custom_logging import LOGGER
+from app import custom_logging
+
+LOGGER = custom_logging.get_logger(__name__)
 
 
+LOGGER.info("Setting up the fastapi app")
 # Create FastAPI app
 app: FastAPI = FastAPI()
 
@@ -24,4 +27,4 @@ app.include_router(auth.router)
 app.include_router(points.router)
 
 if __name__ == "__main__":
-    LOGGER.info("Starting the application.")
+    LOGGER.info("Starting the application")
