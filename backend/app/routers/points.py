@@ -86,7 +86,7 @@ def delete_point(
 @router.put("/points/{point_id}", response_model=schemas.Point)
 def update_point(
     point_id: int,
-    description: str,
+    point_update: schemas.PointUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ) -> schemas.Point:
@@ -115,6 +115,6 @@ def update_point(
         )
 
     updated_point = crud.edit_point_description(
-        db=db, point_id=point_id, description=description, user_id=current_user.id
+        db=db, point_id=point_id, description=point_update.description, user_id=current_user.id
     )
     return updated_point
