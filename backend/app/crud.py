@@ -16,7 +16,7 @@ def handle_exception(func):
             return func(*args, **kwargs)
         except Exception as e:
             LOGGER.error(f"An error occurred in {func.__name__}: {e}")
-            # traceback.print_exc()
+            traceback.print_exc()
             return None
 
     return wrapper
