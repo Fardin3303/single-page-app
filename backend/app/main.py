@@ -33,15 +33,26 @@ app: FastAPI = FastAPI(
 origins: List[str] = [
     "http://localhost:3000",
 ]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-app.include_router(auth.router)
-app.include_router(points.router)
+
+try:
+    LOGGER.info("Adding CORS middleware to the app")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+except Exception as e:
+    LOGGER.error(f"Error adding CORS middleware: {e}")
+
+# Include routers
+try:
+    LOGGER.info("Including routers to the app")
+    app.include_router(auth.router)
+    app.include_router(points.router)
+except Exception as e:
+    LOGGER.error(f"Error including routers: {e}")
 
 if __name__ == "__main__":
     LOGGER.info("Starting the application")
