@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://host.docker.internal:8000'; // Replace with your backend base URL
+const API_BASE_URL = 'http://localhost:8000'; // Replace with your backend base URL
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -22,21 +22,47 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const getPoints = async () => {
-  const response = await apiClient.get('/points/');
-  return response.data;
+  try {
+    const response = await apiClient.get('/points/');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting points:', error);
+    throw error;
+  }
 };
 
-export const createPoint = async (pointData) => {
-  const response = await apiClient.post('/points/', pointData);
-  return response.data;
+export const createPoint = async (pointData, token) => {
+  try {
+    const response = await apiClient.post('/points/', pointData, {
+      headers: {
+        Authorization: `Bearer ${token}`  // Assuming your API expects a Bearer token
+        // Add other headers if required by your API
+      }
+    });
+    return response.data;
+  } catch (error) {
+    // Handle error here
+    console.error('Error creating point:', error);
+    throw error; // Optional: rethrow the error to handle it elsewhere
+  }
 };
 
-export const updatePoint = async (pointId, pointData) => {
-  const response = await apiClient.put(`/points/${pointId}/`, pointData);
-  return response.data;
-};
-
+export const updatePoint = async (pointId, description) => {
+  try {
+    const response = await apiClient.put(`/points/${pointId}/`, { description });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating point:', error);
+    throw error;
+  }
+}
 export const deletePoint = async (pointId) => {
-  const response = await apiClient.delete(`/points/${pointId}/`);
-  return response.data;
-};
+  try {
+    const response = await apiClient.delete(`/points/${pointId}/`);
+    return response.data;
+  }
+  catch (error) {
+    console.error('Error deleting point:', error);
+    throw error;
+  }
+}
