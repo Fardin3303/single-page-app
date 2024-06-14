@@ -3,6 +3,31 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import '../../App.css';
 import { getPoints, createPoint, updatePoint, deletePoint } from '../../api/api';
+import { createUser, getTokenForUser } from "../../api/AuthService"; 
+
+let userToken = '';
+
+const initializeUser = async () => {
+  try {
+    const userData = {
+      username: prompt("Please enter your username", "Username"),
+      password: prompt("Please enter your password", "Password"),
+    };
+    if (!userData.username || !userData.password) {
+      throw new Error('Username and password are required');
+    }
+    const user = await createUser(userData);
+    console.log('User created successfully:', user);
+    const tokenResponse = await getTokenForUser(userData.username, userData.password);
+    console.log('Token received successfully:', tokenResponse);
+    userToken = tokenResponse.access_token;
+  } catch (error) {
+    console.error('Error initializing user:', error);
+    // Handle error state or display error message
+  }
+};
+
+initializeUser();
 
 const LeafletComponent = () => {
   const mapContainerRef = useRef(null);
@@ -30,6 +55,7 @@ const LeafletComponent = () => {
         console.error('Error fetching points:', error);
         // Handle error state or display error message
       });
+  }, []);
 
   // Function to update marker description in state
   const updateMarkerDescription = (markerId, newDescription) => {
@@ -51,26 +77,20 @@ const LeafletComponent = () => {
       // Ask user to insert description for the point
       const description = prompt("Please enter the description for the point", "Description");
       if (!description) {
-        // Ask user to insert description for the point
         alert("Description is required");
         return;
       }
-      const pointData = { description: description, latitude: lat.toString(), longitude: lat.toString(), created_at: new Date().toISOString() };
-      const token = 'your_token_here';
-      // console.log("Lat, Lon : " + lat + ", " + lng);
-      // console.log("type of lat, lon : " + typeof(lat) + ", " + typeof(lng));
-      // console.log("pointData : " + pointData);
-      // console.log(getPoints)
-      createPoint(pointData, token)
+      const pointData = { description: description, latitude: lat.toString(), longitude: lng.toString(), created_at: new Date().toISOString() };
+
+      createPoint(pointData, userToken)
       .then((data) => {
         console.log('Point created successfully:', data);
+        const newMarker = { id: data.id, lat, lng, description };
+        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
       })
       .catch((error) => {
         console.error('Error creating point:', error);
-      }
-      );
-      const newMarker = { id: Date.now(), lat, lng, description };
-      setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+      });
     });
 
     return () => {
@@ -112,8 +132,7 @@ const LeafletComponent = () => {
           updateMarkerDescription(marker.id, newDescription);
 
           // Call the API to update the marker description on the server
-          const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWVpZCIsImV4cCI6MTcxODM1NTc4OX0.mxq_fmrCaHsda_iV2r2X0bTcjDPpsSq3zFBforEsOyg'; // Replace with your actual token
-          updatePoint(marker.id, newDescription, token)
+          updatePoint(marker.id, newDescription, userToken)
             .then((updatedPoint) => {
               console.log('Point updated successfully:', updatedPoint);
               // Optionally update state with the response if needed
@@ -130,9 +149,9 @@ const LeafletComponent = () => {
         deleteButton.addEventListener('click', () => {
           setMarkers((prevMarkers) => prevMarkers.filter((m) => m.id !== marker.id));
           console.log("Asking to delete marker with id: " + marker.id);
-          const token = 'your token here';
+
           // Call the API to delete the marker on the server
-          deletePoint(marker.id, token)
+          deletePoint(marker.id, userToken)
             .then((deletedPoint) => {
               console.log('Point deleted successfully:', deletedPoint);
               // Optionally update state with the response if needed

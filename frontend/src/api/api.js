@@ -47,19 +47,33 @@ export const createPoint = async (pointData, token) => {
   }
 };
 
-export const updatePoint = async (pointId, description) => {
+export const updatePoint = async (pointId, newDescription, token) => {
+  console.log('Updating point in api', pointId, newDescription);
   try {
-    const response = await apiClient.put(`/points/${pointId}/`, { description });
-    return response.data; // Return the updated point data
-  } catch (error) {
-    console.error('Error updating point:', error);
-    throw error; // Rethrow the error for handling in the component
+    const response = await apiClient.put(`/points/${pointId}/`, { description: newDescription }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+        // Add other headers if required by your API
+      }
+    });
+    return response.data;
   }
-};
+  catch (error) {
+    console.error('Error updating point:', error);
+    throw error;
+  }
+}
 
-export const deletePoint = async (pointId) => {
+
+
+export const deletePoint = async (pointId, token) => {
   try {
-    const response = await apiClient.delete(`/points/${pointId}/`);
+    const response = await apiClient.delete(`/points/${pointId}/`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+        // Add other headers if required by your API
+      }
+    });
     return response.data;
   }
   catch (error) {
