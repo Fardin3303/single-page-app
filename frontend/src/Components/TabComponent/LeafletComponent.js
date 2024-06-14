@@ -14,6 +14,23 @@ const LeafletComponent = () => {
 
   const [markers, setMarkers] = useState([]);
 
+  // Fetch points from the server
+  useEffect(() => {
+    getPoints()
+      .then((points) => {
+        console.log('Points fetched successfully:', points);
+        setMarkers(points.map((point) => ({
+          id: point.id,
+          lat: parseFloat(point.latitude),
+          lng: parseFloat(point.longitude),
+          description: point.description,
+        })));
+      })
+      .catch((error) => {
+        console.error('Error fetching points:', error);
+        // Handle error state or display error message
+      });
+
   // Function to update marker description in state
   const updateMarkerDescription = (markerId, newDescription) => {
     setMarkers((prevMarkers) =>
