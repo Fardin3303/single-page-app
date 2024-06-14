@@ -50,12 +50,13 @@ export const createPoint = async (pointData, token) => {
 export const updatePoint = async (pointId, description) => {
   try {
     const response = await apiClient.put(`/points/${pointId}/`, { description });
-    return response.data;
+    return response.data; // Return the updated point data
   } catch (error) {
     console.error('Error updating point:', error);
-    throw error;
+    throw error; // Rethrow the error for handling in the component
   }
-}
+};
+
 export const deletePoint = async (pointId) => {
   try {
     const response = await apiClient.delete(`/points/${pointId}/`);
