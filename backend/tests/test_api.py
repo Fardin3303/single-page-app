@@ -1,36 +1,9 @@
 import unittest
 import requests
-import os
-import sys
-from sqlalchemy import create_engine, MetaData, Table, delete
-from sqlmodel import SQLModel
 
-# print(f"parent directory: {os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))}")
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
-
-# from app.database import engine
-base = SQLModel
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:password@localhost:5432/mydatabase"
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-
-tables_to_cleanup = ["users", "points_of_interest"]
 
 class TestAPI(unittest.TestCase):
     BASE_URL = "http://0.0.0.0:8000"
-
-    def clear_data_after_tests(request):
-        """
-        Clear the database after the tests have completed.
-        """
-    
-        with engine.connect() as connection:
-            metadata = MetaData()
-
-            for table in tables_to_cleanup:
-                table = Table(table, metadata, autoload_with=connection)
-                delete_stmt = delete(table)
-                connection.execute(delete_stmt)
-
 
 
     def create_user(self, username, password):
@@ -165,10 +138,6 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response_points.status_code, 200)
         self.assertEqual(len(response_points.json()), 1)
         self.assertEqual(response_points.json()[0]["description"], "Test point by user 2")
-
-        self.clear_data_after_tests()
-
-
 
 
 if __name__ == "__main__":
