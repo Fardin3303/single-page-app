@@ -10,7 +10,24 @@ LOGGER = custom_logging.get_logger(__name__)
 
 LOGGER.info("Setting up the fastapi app")
 # Create FastAPI app
-app: FastAPI = FastAPI()
+app: FastAPI = FastAPI(
+    title="Geospatial Point Management API",
+    description="API to create, read, update, and delete geospatial points.",
+    responses={
+        200: {"description": "Success"},
+        201: {"description": "Created"},
+        204: {"description": "No Content"},
+        400: {"description": "Bad Request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Not Found"},
+        405: {"description": "Method Not Allowed"},
+        429: {"description": "Too Many Requests"},
+        500: {"description": "Internal Server Error"},
+        503: {"description": "Service Unavailable"},
+        422: {"description": "Validation Error"},
+    },
+)
 
 # Set up CORS origins to allow requests from the frontend
 origins: List[str] = [
