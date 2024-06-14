@@ -19,7 +19,7 @@ const initializeUser = async () => {
     const user = await createUser(userData);
     console.log('User created successfully:', user);
     const tokenResponse = await getTokenForUser(userData.username, userData.password);
-    console.log('Token received successfully:', tokenResponse);
+    console.log("Token received successfully");
     userToken = tokenResponse.access_token;
   } catch (error) {
     console.error('Error initializing user:', error);
@@ -35,7 +35,7 @@ const LeafletComponent = () => {
 
   const [lng] = useState(24.926);
   const [lat] = useState(60.227);
-  const [zoom] = useState(12);
+  const [zoom] = useState(3);
 
   const [markers, setMarkers] = useState([]);
 
