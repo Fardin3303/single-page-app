@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import '../../App.css';
+import {getPoints, createPoint, updatePoint} from '../../api/api';
 
 const LeafletComponent = () => {
   const mapContainerRef = useRef(null);
@@ -21,6 +22,24 @@ const LeafletComponent = () => {
 
     map.current.on('click', (e) => {
       const { lat, lng } = e.latlng;
+      const pointData = { description: "from frontend", latitude: lat.toString(), longitude: lat.toString(), id: 1, created_at: "2021-10-12T19:14:00.000000Z" }
+      const token = 'your_token_here';
+      console.log("Lat, Lon : " + lat + ", " + lng);
+      console.log("type of lat, lon : " + typeof(lat) + ", " + typeof(lng));
+      console.log("pointData : " + pointData);
+      // console.log(getPoints)
+      createPoint(pointData, token)
+      .then((data) => {
+        console.log('Point created successfully:', data);
+      })
+      .catch((error) => {
+        console.error('Error creating point:', error);
+      }
+      );
+      // getPoints().then((data) => {
+      //   console.log('Points:', data);
+      // }
+      // );
       const newMarker = { id: Date.now(), lat, lng, description: "" };
       setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
     });
