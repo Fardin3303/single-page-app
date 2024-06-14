@@ -16,7 +16,6 @@ class PointCreate(PointBase):
     Model for creating a point.
     Inherits from PointBase.
     """
-    id: int
     created_at: datetime.datetime
 
 
