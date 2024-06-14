@@ -128,18 +128,19 @@ const LeafletComponent = () => {
         updateButton.addEventListener('click', () => {
           const newDescription = descriptionInput.value;
 
-          // Update the marker description in state
-          updateMarkerDescription(marker.id, newDescription);
 
           // Call the API to update the marker description on the server
           updatePoint(marker.id, newDescription, userToken)
             .then((updatedPoint) => {
               console.log('Point updated successfully:', updatedPoint);
               // Optionally update state with the response if needed
+              // Update the marker description in state
+              updateMarkerDescription(marker.id, newDescription);
             })
             .catch((error) => {
               console.error('Error updating point:', error);
               // Handle error state or display error message
+              updateMarkerDescription(marker.id, marker.description);
             });
 
           markerInstance.closePopup();
@@ -149,18 +150,17 @@ const LeafletComponent = () => {
         deleteButton.addEventListener('click', () => {
           setMarkers((prevMarkers) => prevMarkers.filter((m) => m.id !== marker.id));
           console.log("Asking to delete marker with id: " + marker.id);
-
           // Call the API to delete the marker on the server
           deletePoint(marker.id, userToken)
             .then((deletedPoint) => {
               console.log('Point deleted successfully:', deletedPoint);
               // Optionally update state with the response if needed
+              map.current.removeLayer(markerInstance);
             })
             .catch((error) => {
               console.error('Error deleting point:', error);
               // Handle error state or display error message
             });
-          map.current.removeLayer(markerInstance);
         });
       });
     });
