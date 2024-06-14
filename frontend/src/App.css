@@ -98,3 +98,17 @@ ul.nav li.active {
 .marker-delete-btn:hover {
   background-color: #d32f2f;
 }
+
+.marker-update-btn {
+  margin-top: 5px;
+  padding: 5px 10px;
+  color: white;
+  background-color: #4CAF50;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.marker-update-btn:hover {
+  background-color: #46a049;
+}
