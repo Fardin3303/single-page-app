@@ -10,7 +10,7 @@ services:
       postgres-db:
         condition: service_healthy
     command: >
-      sh -c "python app/migrate_databse.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "python app/migrate_database.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     build: ./frontend
