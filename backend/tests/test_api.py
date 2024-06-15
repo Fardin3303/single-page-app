@@ -65,8 +65,8 @@ class TestAPI(unittest.TestCase):
         response_user_1 = self.create_point(
             token=token_user_1,
             description="Test point by user 1",
-            latitude="40.7128",
-            longitude="-74.0060",
+            latitude="60.5",
+            longitude="24.9",
             created_at="2021-06-01T10:00:00.000000Z"
         )
         self.assertEqual(response_user_1["description"], "Test point by user 1")
@@ -75,8 +75,8 @@ class TestAPI(unittest.TestCase):
         response_user_2 = self.create_point(
             token=token_user_2,
             description="Test point by user 2",
-            latitude="40.7128",
-            longitude="-74.0060",
+            latitude="60.22",
+            longitude="24.92",
             created_at="2021-06-01T10:00:00.000000Z"
         )
         self.assertEqual(response_user_2["description"], "Test point by user 2")
