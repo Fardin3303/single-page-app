@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from datetime import datetime
@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app import models
 from app.dependencies import get_db, get_current_user
-from db_config import TestingSessionLocal, engine, base, override_get_db, override_get_current_user
+from tests.unit_tests.db_config import TestingSessionLocal, engine, base, override_get_db, override_get_current_user
 
 
 
@@ -60,6 +60,7 @@ def create_test_user(username: str, password: str) -> dict:
     Helper function to create a test user.
     """
     response = client.post("/users/", json={"username": username, "password": password})
+    print(response.json())
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == username
@@ -89,7 +90,6 @@ def test_create_point():
             "description": "Test point",
             "latitude": "40.7128",
             "longitude": "-74.0060",
-            "id": 1,
             "created_at": str(datetime.now()),
         },
         headers={
@@ -115,7 +115,6 @@ def test_create_point_for_another_user():
             "description": "Test point2",
             "latitude": "45.7128",
             "longitude": "-75.0060",
-            "id": 2,
             "created_at": str(datetime.now()),
         },
         headers={
@@ -153,13 +152,14 @@ def test_edit_point():
     """
     response = client.put(
         "/points/1",
-        params={
-            "description": "Test point edited",
-        },
+        json={"description": "Test point edited"},
         headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
             "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
         },
     )
+    print(response.json())
     assert response.status_code == 200
     data = response.json()
     assert data["description"] == "Test point edited"
