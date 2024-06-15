@@ -35,7 +35,7 @@ const LeafletComponent = () => {
 
   const [lng] = useState(24.926);
   const [lat] = useState(60.227);
-  const [zoom] = useState(3);
+  const [zoom] = useState(11);
 
   const [markers, setMarkers] = useState([]);
 
