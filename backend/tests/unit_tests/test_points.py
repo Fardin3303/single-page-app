@@ -25,14 +25,15 @@ def clear_data_after_tests(request):
     Fixture to clear the data from the database after running the tests.
     """
     yield
-
-    with engine.connect() as connection:
-        transaction = connection.begin()
-        for table in reversed(base.metadata.sorted_tables):
-            connection.execute(table.delete())
-        transaction.commit()
-
-    connection.close()
+    try:
+        with engine.connect() as connection:
+            transaction = connection.begin()
+            for table in reversed(base.metadata.sorted_tables):
+                connection.execute(table.delete())
+            transaction.commit()
+        connection.close()
+    except Exception as e:
+        print(e)
 
 
 @pytest.fixture(scope="module")
