@@ -3,22 +3,24 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
+
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlmodel import Session
 from app.main import app
 from app.dependencies import get_db
-from tests.unit_tests.db_config import TestingSessionLocal, engine, base, override_get_db
+from app.crud import create_user as crud_create_user
+from app.schemas import UserCreate
+from tests.unit_tests.db_config import base, SQLALCHEMY_DATABASE_URL
 
 
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 @pytest.fixture(scope="session", autouse=True)
 def clear_data_after_tests(request):
     """
-    Fixture that clears the data in the database after running the tests.
+    Fixture to clear the data from the database after running the tests.
     """
     yield
     try:
@@ -31,69 +33,81 @@ def clear_data_after_tests(request):
     except Exception as e:
         print(e)
 
+def override_get_db():
+    session = Session(engine)
+    try:
+        yield session
+    finally:
+        session.close()
+
+app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(scope="module")
-def test_db():
-    """
-    Fixture that creates the necessary database tables for testing.
-    """
-    base.metadata.create_all(bind=engine)
-    yield
-    base.metadata.drop_all(bind=engine)
+def client():
+    with TestClient(app) as c:
+        yield c
 
-
-@pytest.fixture(scope="function")
-def db_session():
-    """
-    Fixture that provides a TestingSessionLocal instance for each test function.
-    """
-    session = TestingSessionLocal()
+@pytest.fixture(scope="module")
+def session():
+    session = Session(engine)
     yield session
-    session.close()
+    session.rollback()
 
-
-def test_create_user():
-    """
-    Test case for creating a new user.
-    """
-    response = client.post(
-        "/users/", json={"username": "testuser3", "password": "testpassword"}
-    )
+def test_create_user(client):
+    user_data = {
+        "username": "testuser_auth",
+        "password": "testpassword"
+    }
+    
+    response = client.post("/users/", json=user_data)
+    
     assert response.status_code == 200
     data = response.json()
-    assert data["username"] == "testuser3"
+    assert data["username"] == user_data["username"]
+    assert "id" in data
 
-
-def test_create_existing_user():
-    """
-    Test case for creating a user with an existing username.
-    """
-    response = client.post(
-        "/users/", json={"username": "testuser3", "password": "testpassword"}
-    )
+def test_create_existing_user(client, session):
+    user_data = {
+        "username": "existinguser",
+        "password": "testpassword"
+    }
+    
+    # Create user directly in the session
+    crud_create_user(session, UserCreate(**user_data))
+    
+    response = client.post("/users/", json=user_data)
+    
     assert response.status_code == 400
-    assert response.json() == {"detail": "Username already registered"}
+    assert response.json()["detail"] == "Username already registered"
 
-
-def test_login_for_access_token():
-    """
-    Test case for logging in and obtaining an access token.
-    """
-    response = client.post(
-        "/token", data={"username": "testuser3", "password": "testpassword"}
-    )
+def test_login_for_access_token(client, session):
+    user_data = {
+        "username": "loginuser",
+        "password": "loginpassword"
+    }
+    
+    # Create user directly in the session
+    crud_create_user(session, UserCreate(**user_data))
+    
+    login_data = {
+        "username": user_data["username"],
+        "password": user_data["password"]
+    }
+    
+    response = client.post("/token", data=login_data)
+    
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
 
-
-def test_incorrect_login():
-    """
-    Test case for logging in with incorrect credentials.
-    """
-    response = client.post(
-        "/token", data={"username": "wronguser", "password": "wrongpassword"}
-    )
+def test_login_for_access_token_invalid_credentials(client):
+    login_data = {
+        "username": "nonexistentuser",
+        "password": "wrongpassword"
+    }
+    
+    response = client.post("/token", data=login_data)
+    
     assert response.status_code == 400
-    assert response.json() == {"detail": "Incorrect username or password"}
+    assert response.json()["detail"] == "Incorrect username or password"
