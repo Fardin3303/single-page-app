@@ -3,13 +3,14 @@ from datetime import datetime
 from sqlalchemy import create_engine
 import sys
 import os
-from sqlmodel import SQLModel, Session
+from sqlmodel import Session
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from app.models import User, PointOfInterest
 from unit_tests.db_config import SQLALCHEMY_DATABASE_URL, base
 
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 @pytest.fixture(scope="session", autouse=True)
 def clear_data_after_tests(request):
@@ -28,26 +29,14 @@ def clear_data_after_tests(request):
         print(e)
 
 
-@pytest.fixture(scope="module")
-def engine():
-    """
-    Fixture that creates a SQLAlchemy engine for the test module.
-    """
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    SQLModel.metadata.create_all(engine)
-    yield engine
-    SQLModel.metadata.drop_all(engine)
-    engine.dispose()
-
-
 @pytest.fixture(scope="function")
-def session(engine):
+def session():
     """
     Fixture that creates a new session for each test function.
     """
-    with Session(engine) as session:
-        yield session
-        session.rollback()
+    session = Session(engine)
+    yield session
+    session.rollback()
 
 
 def test_create_user(session):
