@@ -1,4 +1,4 @@
-import unittest
+import pytest
 from datetime import datetime
 from sqlalchemy import create_engine
 import sys
@@ -8,79 +8,207 @@ from sqlmodel import SQLModel, Session
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from app.models import User, PointOfInterest
-from unit_tests.db_config import SQLALCHEMY_DATABASE_URL
-
-class TestModels(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.engine = create_engine(SQLALCHEMY_DATABASE_URL)
-        SQLModel.metadata.create_all(cls.engine)
-    
-    @classmethod
-    def tearDownClass(cls):
-        SQLModel.metadata.drop_all(cls.engine)
-
-    def setUp(self):
-        self.session = Session(self.engine)
-    
-    def test_create_user(self):
-        user = User(username="testuser", hashed_password="hashed_password")
-        self.session.add(user)
-        self.session.commit()
-
-        retrieved_user = self.session.get(User, user.id)
-        self.assertIsNotNone(retrieved_user)
-        self.assertEqual(retrieved_user.username, "testuser")
-        self.assertEqual(retrieved_user.hashed_password, "hashed_password")
-
-    def test_create_point_of_interest(self):
-        user = User(username="testuser2", hashed_password="hashed_password")
-        self.session.add(user)
-        self.session.commit()
-
-        poi = PointOfInterest(
-            description="Test POI",
-            latitude="12.34",
-            longitude="56.78",
-            created_at=datetime.now(),
-            user_id=user.id
-        )
-        self.session.add(poi)
-        self.session.commit()
-
-        retrieved_poi = self.session.get(PointOfInterest, poi.id)
-        self.assertIsNotNone(retrieved_poi)
-        self.assertEqual(retrieved_poi.description, "Test POI")
-        self.assertEqual(retrieved_poi.latitude, "12.34")
-        self.assertEqual(retrieved_poi.longitude, "56.78")
-        self.assertEqual(retrieved_poi.user_id, user.id)
-
-    def test_relationship(self):
-        user = User(username="testuser3", hashed_password="hashed_password")
-        poi = PointOfInterest(
-            description="Test POI",
-            latitude="12.34",
-            longitude="56.78",
-            created_at=datetime.now()
-        )
-        user.points_of_interest.append(poi)
-        
-        poi2 = PointOfInterest(
-            description="Test POI 2",
-            latitude="12.34",
-            longitude="56.78",
-            created_at=datetime.now()
-        )
-        user.points_of_interest.append(poi2)
-        self.session.add(user)
-        self.session.commit()
+from unit_tests.db_config import SQLALCHEMY_DATABASE_URL, base
 
 
+@pytest.fixture(scope="session", autouse=True)
+def clear_data_after_tests(request):
+    """
+    Fixture to clear the data from the database after running the tests.
+    """
+    yield
+    try:
+        with engine.connect() as connection:
+            transaction = connection.begin()
+            for table in reversed(base.metadata.sorted_tables):
+                connection.execute(table.delete())
+            transaction.commit()
+        connection.close()
+    except Exception as e:
+        print(e)
 
-        retrieved_user = self.session.get(User, user.id)
-        self.assertEqual(len(retrieved_user.points_of_interest), 2)
-        self.assertEqual(retrieved_user.points_of_interest[0].description, "Test POI")
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.fixture(scope="module")
+def engine():
+    """
+    Fixture that creates a SQLAlchemy engine for the test module.
+    """
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    SQLModel.metadata.create_all(engine)
+    yield engine
+    SQLModel.metadata.drop_all(engine)
+    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def session(engine):
+    """
+    Fixture that creates a new session for each test function.
+    """
+    with Session(engine) as session:
+        yield session
+        session.rollback()
+
+
+def test_create_user(session):
+    """
+    Test case for creating a new user.
+    """
+    user = User(username="testuser", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+
+    retrieved_user = session.get(User, user.id)
+    assert retrieved_user is not None
+    assert retrieved_user.username == "testuser"
+    assert retrieved_user.hashed_password == "hashed_password"
+
+
+def test_create_point_of_interest(session):
+    """
+    Test case for creating a new point of interest.
+    """
+    user = User(username="testuser2", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+
+    poi = PointOfInterest(
+        description="Test POI",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=user.id,
+    )
+    session.add(poi)
+    session.commit()
+
+    retrieved_poi = session.get(PointOfInterest, poi.id)
+    assert retrieved_poi is not None
+    assert retrieved_poi.description == "Test POI"
+    assert retrieved_poi.latitude == "12.34"
+    assert retrieved_poi.longitude == "56.78"
+    assert retrieved_poi.user_id == user.id
+
+
+def test_relationship(session):
+    """
+    Test case for testing the relationship between user and point of interest.
+    """
+    user = User(username="testuser3", hashed_password="hashed_password")
+    poi = PointOfInterest(
+        description="Test POI",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+    )
+    user.points_of_interest.append(poi)
+
+    poi2 = PointOfInterest(
+        description="Test POI 2",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+    )
+    user.points_of_interest.append(poi2)
+    session.add(user)
+    session.commit()
+
+    retrieved_user = session.get(User, user.id)
+    assert len(retrieved_user.points_of_interest) == 2
+    assert retrieved_user.points_of_interest[0].description == "Test POI"
+
+
+def test_retrieve_non_existent_user(session):
+    """
+    Test case for retrieving a non-existent user.
+    """
+    non_existent_user = session.get(User, 9999)
+    assert non_existent_user is None
+
+
+def test_retrieve_non_existent_poi(session):
+    """
+    Test case for retrieving a non-existent point of interest.
+    """
+    non_existent_poi = session.get(PointOfInterest, 9999)
+    assert non_existent_poi is None
+
+
+def test_update_user(session):
+    """
+    Test case for updating a user.
+    """
+    user = User(username="testuser_update", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+
+    user.username = "updated_user"
+    session.commit()
+
+    retrieved_user = session.get(User, user.id)
+    assert retrieved_user.username == "updated_user"
+
+
+def test_delete_user(session):
+    """
+    Test case for deleting a user.
+    """
+    user = User(username="testuser_delete", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+
+    session.delete(user)
+    session.commit()
+
+    retrieved_user = session.get(User, user.id)
+    assert retrieved_user is None
+
+
+def test_update_point_of_interest(session):
+    """
+    Test case for updating a point of interest.
+    """
+    user = User(username="testuser_poi_update", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+
+    poi = PointOfInterest(
+        description="Test POI",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=user.id,
+    )
+    session.add(poi)
+    session.commit()
+
+    poi.description = "Updated POI"
+    session.commit()
+
+    retrieved_poi = session.get(PointOfInterest, poi.id)
+    assert retrieved_poi.description == "Updated POI"
+
+
+def test_delete_point_of_interest(session):
+    """
+    Test case for deleting a point of interest.
+    """
+    user = User(username="testuser_poi_delete", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+
+    poi = PointOfInterest(
+        description="Test POI",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=user.id,
+    )
+    session.add(poi)
+    session.commit()
+
+    session.delete(poi)
+    session.commit()
+
+    retrieved_poi = session.get(PointOfInterest, poi.id)
+    assert retrieved_poi is None
