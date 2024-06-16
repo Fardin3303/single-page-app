@@ -70,6 +70,10 @@ class TestAPI(unittest.TestCase):
             created_at="2021-06-01T10:00:00.000000Z"
         )
         self.assertEqual(response_user_1["description"], "Test point by user 1")
+        self.assertEqual(response_user_1["latitude"], "60.5")
+        self.assertEqual(response_user_1["longitude"], "24.9")
+        self.assertEqual(response_user_1["created_at"], "2021-06-01T10:00:00")
+        self.assertEqual(response_user_1["user_id"], user_1["id"])
 
         # User 2 creates a point
         response_user_2 = self.create_point(
@@ -80,6 +84,10 @@ class TestAPI(unittest.TestCase):
             created_at="2021-06-01T10:00:00.000000Z"
         )
         self.assertEqual(response_user_2["description"], "Test point by user 2")
+        self.assertEqual(response_user_2["latitude"], "60.22")
+        self.assertEqual(response_user_2["longitude"], "24.92")
+        self.assertEqual(response_user_2["created_at"], "2021-06-01T10:00:00")
+        self.assertEqual(response_user_2["user_id"], user_2["id"])
 
         # User 2 try to update user 1's point (should fail)
         response_update_user_2 = requests.put(
@@ -114,6 +122,10 @@ class TestAPI(unittest.TestCase):
             }
         )
         self.assertEqual(response_get_updated_point.json()[1]["description"], "Updated point by user 1")
+        self.assertEqual(response_get_updated_point.json()[1]["latitude"], "60.5")
+        self.assertEqual(response_get_updated_point.json()[1]["longitude"], "24.9")
+        self.assertEqual(response_get_updated_point.json()[1]["created_at"], "2021-06-01T10:00:00")
+        self.assertEqual(response_get_updated_point.json()[1]["user_id"], user_1["id"])
 
         # User 2 tries to delete user 1's point (should fail)
         response_delete_user_2 = requests.delete(
