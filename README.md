@@ -37,11 +37,11 @@ The application is built using a modern tech stack, with the backend developed u
 
 *   **Backend**: FastAPI, Python
     
-*   **Frontend**: React
+*   **Frontend**: JavaScript, React
     
 *   **Database**: PostgreSQL
     
-*   **Mapping Library**: OpenLayers
+*   **Mapping Library**: Leaflet
     
 
 ### Setup Instructions
