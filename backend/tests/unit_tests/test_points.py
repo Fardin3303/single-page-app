@@ -160,7 +160,6 @@ def test_edit_point():
             "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
         },
     )
-    print(response.json())
     assert response.status_code == 200
     data = response.json()
     assert data["description"] == "Test point edited"
