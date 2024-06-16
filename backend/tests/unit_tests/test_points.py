@@ -17,7 +17,23 @@ from tests.unit_tests.db_config import SQLALCHEMY_DATABASE_URL, base
 
 # Override the get_db dependency to use a test database
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SQLModel.metadata.create_all(bind=engine)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clear_data_after_tests(request):
+    """
+    Fixture to clear the data from the database after running the tests.
+    """
+    yield
+    try:
+        with engine.connect() as connection:
+            transaction = connection.begin()
+            for table in reversed(base.metadata.sorted_tables):
+                connection.execute(table.delete())
+            transaction.commit()
+        connection.close()
+    except Exception as e:
+        print(e)
 
 
 def override_get_db():
@@ -39,23 +55,6 @@ def override_get_current_user():
 app.dependency_overrides[get_current_user] = override_get_current_user
 
 
-@pytest.fixture(scope="session", autouse=True)
-def clear_data_after_tests(request):
-    """
-    Fixture to clear the data from the database after running the tests.
-    """
-    yield
-    try:
-        with engine.connect() as connection:
-            transaction = connection.begin()
-            for table in reversed(base.metadata.sorted_tables):
-                connection.execute(table.delete())
-            transaction.commit()
-        connection.close()
-    except Exception as e:
-        print(e)
-
-
 @pytest.fixture(scope="module")
 def client():
     with TestClient(app) as c:
@@ -71,7 +70,7 @@ def session():
 
 @pytest.fixture(scope="module")
 def test_user(session):
-    user = User(username="testuser", hashed_password="hashed_password")
+    user = User(username="testuser_1", hashed_password="hashed_password")
     session.add(user)
     session.commit()
     return user
@@ -94,8 +93,10 @@ def test_create_point(client, session, test_user):
     assert data["longitude"] == "56.78"
     assert data["user_id"] == test_user.id
 
+    # delete the point after the test
 
-def test_read_points(client, session, test_user):
+
+def test_read_points(client):
     response = client.get("/points/")
     assert response.status_code == 200
     data = response.json()
@@ -138,13 +139,13 @@ def test_update_point(client, session, test_user):
     assert data["description"] == "Updated Test Point"
 
 
-def test_delete_non_existent_point(client, session, test_user):
+def test_delete_non_existent_point(client):
     response = client.delete("/points/9999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Point not found"
 
 
-def test_update_non_existent_point(client, session, test_user):
+def test_update_non_existent_point(client):
     update_data = {"description": "Non-existent Point"}
     response = client.put("/points/9999", json=update_data)
     assert response.status_code == 404
