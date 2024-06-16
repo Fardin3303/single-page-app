@@ -1,9 +1,6 @@
 import sys
 import os
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -76,119 +73,114 @@ def test_user(session):
     return user
 
 
-def test_create_point(client, session, test_user):
-    point_data = {
-        "description": "Test Point",
-        "latitude": "12.34",
-        "longitude": "56.78",
-        "created_at": datetime.now().isoformat(),
-    }
+class TestPointOfInterestAPI:
+    def test_create_point(self, client, test_user):
+        point_data = {
+            "description": "Test Point",
+            "latitude": "12.34",
+            "longitude": "56.78",
+            "created_at": datetime.now().isoformat(),
+        }
 
-    response = client.post("/points/", json=point_data)
+        response = client.post("/points/", json=point_data)
 
-    assert response.status_code == 200
-    data = response.json()
-    assert data["description"] == "Test Point"
-    assert data["latitude"] == "12.34"
-    assert data["longitude"] == "56.78"
-    assert data["user_id"] == test_user.id
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Test Point"
+        assert data["latitude"] == "12.34"
+        assert data["longitude"] == "56.78"
+        assert data["user_id"] == test_user.id
 
-    # delete the point after the test
+        # Clean up: delete the point after the test
 
+    def test_read_points(self, client):
+        response = client.get("/points/")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
 
-def test_read_points(client):
-    response = client.get("/points/")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
+    def test_delete_point(self, client, session, test_user):
+        point = PointOfInterest(
+            description="Test Point to Delete",
+            latitude="12.34",
+            longitude="56.78",
+            created_at=datetime.now(),
+            user_id=test_user.id,
+        )
+        session.add(point)
+        session.commit()
 
+        response = client.delete(f"/points/{point.id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Test Point to Delete"
 
-def test_delete_point(client, session, test_user):
-    point = PointOfInterest(
-        description="Test Point to Delete",
-        latitude="12.34",
-        longitude="56.78",
-        created_at=datetime.now(),
-        user_id=test_user.id,
-    )
-    session.add(point)
-    session.commit()
+    def test_update_point(self, client, session, test_user):
+        point = PointOfInterest(
+            description="Test Point to Update",
+            latitude="12.34",
+            longitude="56.78",
+            created_at=datetime.now(),
+            user_id=test_user.id,
+        )
+        session.add(point)
+        session.commit()
 
-    response = client.delete(f"/points/{point.id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["description"] == "Test Point to Delete"
+        update_data = {"description": "Updated Test Point"}
 
+        response = client.put(f"/points/{point.id}", json=update_data)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Updated Test Point"
 
-def test_update_point(client, session, test_user):
-    point = PointOfInterest(
-        description="Test Point to Update",
-        latitude="12.34",
-        longitude="56.78",
-        created_at=datetime.now(),
-        user_id=test_user.id,
-    )
-    session.add(point)
-    session.commit()
+    def test_delete_non_existent_point(self, client):
+        response = client.delete("/points/9999")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Point not found"
 
-    update_data = {"description": "Updated Test Point"}
+    def test_update_non_existent_point(self, client):
+        update_data = {"description": "Non-existent Point"}
+        response = client.put("/points/9999", json=update_data)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Point not found"
 
-    response = client.put(f"/points/{point.id}", json=update_data)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["description"] == "Updated Test Point"
+    def test_unauthorized_delete_point(self, client, session,):
+        another_user = User(username="anotheruser", hashed_password="hashed_password")
+        session.add(another_user)
+        session.commit()
 
+        point = PointOfInterest(
+            description="Another User's Point",
+            latitude="12.34",
+            longitude="56.78",
+            created_at=datetime.now(),
+            user_id=another_user.id,
+        )
+        session.add(point)
+        session.commit()
 
-def test_delete_non_existent_point(client):
-    response = client.delete("/points/9999")
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Point not found"
+        response = client.delete(f"/points/{point.id}")
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Not authorized to delete this point"
 
+    def test_unauthorized_update_point(self, client, session, test_user):
+        another_user = User(username="anotheruser2", hashed_password="hashed_password")
+        session.add(another_user)
+        session.commit()
 
-def test_update_non_existent_point(client):
-    update_data = {"description": "Non-existent Point"}
-    response = client.put("/points/9999", json=update_data)
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Point not found"
+        point = PointOfInterest(
+            description="Another User's Point",
+            latitude="12.34",
+            longitude="56.78",
+            created_at=datetime.now(),
+            user_id=another_user.id,
+        )
+        session.add(point)
+        session.commit()
 
+        update_data = {"description": "Attempt to update another user's point"}
 
-def test_unauthorized_delete_point(client, session, test_user):
-    another_user = User(username="anotheruser", hashed_password="hashed_password")
-    session.add(another_user)
-    session.commit()
+        response = client.put(f"/points/{point.id}", json=update_data)
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Not authorized to update this point"
 
-    point = PointOfInterest(
-        description="Another User's Point",
-        latitude="12.34",
-        longitude="56.78",
-        created_at=datetime.now(),
-        user_id=another_user.id,
-    )
-    session.add(point)
-    session.commit()
-
-    response = client.delete(f"/points/{point.id}")
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Not authorized to delete this point"
-
-
-def test_unauthorized_update_point(client, session, test_user):
-    another_user = User(username="anotheruser2", hashed_password="hashed_password")
-    session.add(another_user)
-    session.commit()
-
-    point = PointOfInterest(
-        description="Another User's Point",
-        latitude="12.34",
-        longitude="56.78",
-        created_at=datetime.now(),
-        user_id=another_user.id,
-    )
-    session.add(point)
-    session.commit()
-
-    update_data = {"description": "Attempt to update another user's point"}
-
-    response = client.put(f"/points/{point.id}", json=update_data)
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Not authorized to update this point"
