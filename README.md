@@ -26,7 +26,7 @@ The application is built using a modern tech stack, with the backend developed u
     
     *   **Backend**: Developed using **Python** with **FastAPI**, providing a RESTful API.
         
-    *   **Database**: **PostgreSQL** for storing POI data and user information.
+    *   **Database**: **PostgreSQL** for storing POI data and user information. **Alembic** for database migrations. See `backend/alembic_migrations/README.md` for more information.
         
     *   **Frontend**: Built with **React** to create a dynamic single-page application.
         
