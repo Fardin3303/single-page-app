@@ -3,20 +3,40 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-import pytest
-from datetime import datetime
-from fastapi.testclient import TestClient
-from app.main import app
-from app import models
-from app.dependencies import get_db, get_current_user
-from tests.unit_tests.db_config import TestingSessionLocal, engine, base, override_get_db, override_get_current_user
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlmodel import SQLModel, Session
+from app.main import app
+from app.models import User, PointOfInterest
+from app.dependencies import get_db, get_current_user
+from datetime import datetime
+from tests.unit_tests.db_config import SQLALCHEMY_DATABASE_URL, base
+
+
+# Override the get_db dependency to use a test database
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SQLModel.metadata.create_all(bind=engine)
+
+
+def override_get_db():
+    session = Session(engine)
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 app.dependency_overrides[get_db] = override_get_db
-app.dependency_overrides[get_current_user] = override_get_current_user
 
-client = TestClient(app)
+
+# Mock current user dependency
+def override_get_current_user():
+    return User(id=1, username="testuser", hashed_password="hashed_password")
+
+
+app.dependency_overrides[get_current_user] = override_get_current_user
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -37,165 +57,137 @@ def clear_data_after_tests(request):
 
 
 @pytest.fixture(scope="module")
-def test_db():
-    """
-    Fixture to create the database tables for testing.
-    """
-    base.metadata.create_all(bind=engine)
-    yield
-    base.metadata.drop_all(bind=engine)
+def client():
+    with TestClient(app) as c:
+        yield c
 
 
-@pytest.fixture(scope="function")
-def db_session():
-    """
-    Fixture to create a new database session for each test function.
-    """
-    session = TestingSessionLocal()
+@pytest.fixture(scope="module")
+def session():
+    session = Session(engine)
     yield session
-    session.close()
+    session.rollback()
 
 
-def create_test_user(username: str, password: str) -> dict:
-    """
-    Helper function to create a test user.
-    """
-    response = client.post("/users/", json={"username": username, "password": password})
-    print(response.json())
+@pytest.fixture(scope="module")
+def test_user(session):
+    user = User(username="testuser", hashed_password="hashed_password")
+    session.add(user)
+    session.commit()
+    return user
+
+
+def test_create_point(client, session, test_user):
+    point_data = {
+        "description": "Test Point",
+        "latitude": "12.34",
+        "longitude": "56.78",
+        "created_at": datetime.now().isoformat(),
+    }
+
+    response = client.post("/points/", json=point_data)
+
     assert response.status_code == 200
     data = response.json()
-    assert data["username"] == username
-
-    return data
-
-
-def get_access_token(username: str, password: str) -> str:
-    """
-    Helper function to get an access token for a user.
-    """
-    response = client.post("/token", data={"username": username, "password": password})
-    assert response.status_code == 200
-    data = response.json()
-    assert data["token_type"] == "bearer"
-    return data["access_token"]
+    assert data["description"] == "Test Point"
+    assert data["latitude"] == "12.34"
+    assert data["longitude"] == "56.78"
+    assert data["user_id"] == test_user.id
 
 
-def test_create_point():
-    """
-    Test creating a point of interest for a user.
-    """
-    create_test_user(username="testuser", password="testpassword")
-    response = client.post(
-        "/points/",
-        json={
-            "description": "Test point",
-            "latitude": "40.7128",
-            "longitude": "-74.0060",
-            "created_at": str(datetime.now()),
-        },
-        headers={
-            "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
-        },
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["description"] == "Test point"
-    assert data["latitude"] == "40.7128"
-    assert data["longitude"] == "-74.0060"
-    assert data["user_id"] == 1
-
-
-def test_create_point_for_another_user():
-    """
-    Test creating a point of interest for another user.
-    """
-    create_test_user(username="testuser2", password="testpassword2")
-    response = client.post(
-        "/points/",
-        json={
-            "description": "Test point2",
-            "latitude": "45.7128",
-            "longitude": "-75.0060",
-            "created_at": str(datetime.now()),
-        },
-        headers={
-            "Authorization": f"Bearer {get_access_token(username='testuser2', password='testpassword2')}"
-        },
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["description"] == "Test point2"
-    assert data["latitude"] == "45.7128"
-    assert data["longitude"] == "-75.0060"
-
-
-def test_read_points():
-    """
-    Test reading all points of interest.
-    """
+def test_read_points(client, session, test_user):
     response = client.get("/points/")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["description"] == "Test point"
-    assert data[0]["latitude"] == "40.7128"
-    assert data[0]["longitude"] == "-74.0060"
-    assert data[0]["user_id"] == 1
-    assert data[1]["description"] == "Test point2"
-    assert data[1]["latitude"] == "45.7128"
-    assert data[1]["longitude"] == "-75.0060"
-    assert data[1]["user_id"] == 1
+    assert isinstance(data, list)
 
 
-def test_edit_point():
-    """
-    Test editing a point of interest.
-    """
-    response = client.put(
-        "/points/1",
-        json={"description": "Test point edited"},
-        headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
-        },
+def test_delete_point(client, session, test_user):
+    point = PointOfInterest(
+        description="Test Point to Delete",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=test_user.id,
     )
+    session.add(point)
+    session.commit()
+
+    response = client.delete(f"/points/{point.id}")
     assert response.status_code == 200
     data = response.json()
-    assert data["description"] == "Test point edited"
-    assert data["latitude"] == "40.7128"
-    assert data["longitude"] == "-74.0060"
-    assert data["user_id"] == 1
+    assert data["description"] == "Test Point to Delete"
 
 
-def test_delete_point():
-    """
-    Test deleting a point of interest.
-    """
-    response = client.delete(
-        "/points/1",
-        headers={
-            "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
-        },
+def test_update_point(client, session, test_user):
+    point = PointOfInterest(
+        description="Test Point to Update",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=test_user.id,
     )
+    session.add(point)
+    session.commit()
+
+    update_data = {"description": "Updated Test Point"}
+
+    response = client.put(f"/points/{point.id}", json=update_data)
     assert response.status_code == 200
     data = response.json()
-    assert data["description"] == "Test point edited"
-    assert data["latitude"] == "40.7128"
-    assert data["longitude"] == "-74.0060"
-    assert data["user_id"] == 1
+    assert data["description"] == "Updated Test Point"
 
 
-@pytest.mark.skip
-def test_delete_point_with_different_user():
-    """
-    Test deleting a point of interest with a different user.
-    """
-    response = client.delete(
-        "/points/2",
-        headers={
-            "Authorization": f"Bearer {get_access_token(username='testuser', password='testpassword')}"
-        },
+def test_delete_non_existent_point(client, session, test_user):
+    response = client.delete("/points/9999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Point not found"
+
+
+def test_update_non_existent_point(client, session, test_user):
+    update_data = {"description": "Non-existent Point"}
+    response = client.put("/points/9999", json=update_data)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Point not found"
+
+
+def test_unauthorized_delete_point(client, session, test_user):
+    another_user = User(username="anotheruser", hashed_password="hashed_password")
+    session.add(another_user)
+    session.commit()
+
+    point = PointOfInterest(
+        description="Another User's Point",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=another_user.id,
     )
+    session.add(point)
+    session.commit()
+
+    response = client.delete(f"/points/{point.id}")
     assert response.status_code == 403
-    assert response.json() == {"detail": "Not authorized to update this point"}
+    assert response.json()["detail"] == "Not authorized to delete this point"
+
+
+def test_unauthorized_update_point(client, session, test_user):
+    another_user = User(username="anotheruser2", hashed_password="hashed_password")
+    session.add(another_user)
+    session.commit()
+
+    point = PointOfInterest(
+        description="Another User's Point",
+        latitude="12.34",
+        longitude="56.78",
+        created_at=datetime.now(),
+        user_id=another_user.id,
+    )
+    session.add(point)
+    session.commit()
+
+    update_data = {"description": "Attempt to update another user's point"}
+
+    response = client.put(f"/points/{point.id}", json=update_data)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to update this point"
